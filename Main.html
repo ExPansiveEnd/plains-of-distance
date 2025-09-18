@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>3D</title>
+  <style>
+    body { margin: 0; overflow: hidden; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+
+<script>
+/* ------------------------------------------------
+   1. SCENE, CAMERA, RENDERER
+   ------------------------------------------------
+   Syntax: 
+     const scene = new THREE.Scene();
+     const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
+     const renderer = new THREE.WebGLRenderer();
+------------------------------------------------ */
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+const renderer = new THREE.WebGLRenderer();
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
+
+/* ------------------------------------------------
+   2. LIGHTING
+   ------------------------------------------------
+   Syntax:
+     const light = new THREE.DirectionalLight(color, intensity);
+     scene.add(light);
+------------------------------------------------ */
+const light = new THREE.DirectionalLight(0xffffff, 10);
+light.position.set(4, 15, 4); // x, y, z
+scene.add(light);
+
+
+/* ------------------------------------------------
+   3. TEXTURES
+   ------------------------------------------------
+   Syntax:
+     const texture = new THREE.TextureLoader().load('image.jpg');
+     const material = new THREE.MeshStandardMaterial({ map: texture });
+------------------------------------------------ */
+const loader = new THREE.TextureLoader();
+const brickTexture = loader.load('Brick.png');
+brickTexture.wrapS = THREE.RepeatWrapping;
+brickTexture.wrapT = THREE.RepeatWrapping;
+brickTexture.repeat.set(25, 2.5);
+
+const brickTexture2 = loader.load('Brick.png');
+brickTexture2.wrapS = THREE.RepeatWrapping;
+brickTexture2.wrapT = THREE.RepeatWrapping;
+brickTexture2.repeat.set(5, 2.5);
+
+const brickTexture3 = loader.load('Brick.png');
+brickTexture3.wrapS = THREE.RepeatWrapping;
+brickTexture3.wrapT = THREE.RepeatWrapping;
+brickTexture3.repeat.set(2.5, 2.5);
+
+const painting1 = loader.load('p1.png');
+painting1.wrapS = THREE.RepeatWrapping;
+painting1.wrapT = THREE.RepeatWrapping;
+painting1.repeat.set(1, 1);
+/* ------------------------------------------------
+   4. OBJECTS (Geometry + Material + Mesh)
+   ------------------------------------------------
+   Syntax:
+     const geometry = new THREE.BoxGeometry(width, height, depth);
+     const material = new THREE.MeshStandardMaterial({ color: 0xffffff });
+     const mesh = new THREE.Mesh(geometry, material);
+     scene.add(mesh);
+------------------------------------------------ */
+// Ground plane
+const ground = new THREE.Mesh(
+  new THREE.PlaneGeometry(100, 20),
+  new THREE.MeshStandardMaterial({ color: 0x222222 })
+);
+ground.rotation.x = -Math.PI / 2;
+scene.add(ground);
+
+// Basic room
+const materials_b1 = [
+    new THREE.MeshBasicMaterial({ map: brickTexture2, side: THREE.DoubleSide }), // right
+    new THREE.MeshBasicMaterial({ map: brickTexture2, side: THREE.DoubleSide }), // left
+    new THREE.MeshBasicMaterial({ color: 0x333333, side: THREE.DoubleSide }), // top
+    new THREE.MeshBasicMaterial({ color: 0x222222, transparent: true, opacity: 0, side: THREE.DoubleSide }), // bottom
+    new THREE.MeshBasicMaterial({ map: brickTexture, side: THREE.DoubleSide }), // front
+    new THREE.MeshBasicMaterial({ map: brickTexture, side: THREE.DoubleSide })  // back
+];
+const Room1 = new THREE.Mesh(
+    new THREE.BoxGeometry(100, 10, 20),
+    materials_b1
+);
+scene.add(Room1);
+Room1.position.set(0, 5, 0);
+
+const picture1 = new THREE.Mesh(
+    new THREE.PlaneGeometry(5, 5),
+    new THREE.MeshBasicMaterial({ map: painting1 })
+);
+scene.add(picture1);
+picture1.position.set(0, 5, -7.4);
+
+const picture1stand = new THREE.Mesh(
+    new THREE.BoxGeometry(5, 10, 5),
+    new THREE.MeshBasicMaterial({ map: brickTexture3 })
+);
+scene.add(picture1stand);
+picture1stand.position.set(0, 5, -10);
+
+
+
+/* ------------------------------------------------
+   5. CAMERA INITIAL POSITION
+   ------------------------------------------------
+   Syntax:
+     camera.position.set(x, y, z);
+------------------------------------------------ */
+camera.position.set(0, 4, 0);
+
+
+/* ------------------------------------------------
+   6. INPUT HANDLING (Keyboard + Mouse)
+   ------------------------------------------------
+   Syntax:
+     document.addEventListener('keydown', (e) => { ... });
+     document.addEventListener('mousemove', (e) => { ... });
+------------------------------------------------ */
+const keys = {};
+document.addEventListener('keydown', (e) => keys[e.code] = true);
+document.addEventListener('keyup',   (e) => keys[e.code] = false);
+
+// Mouse look (click to lock pointer)
+let yaw = 0, pitch = 0;
+document.body.requestPointerLock = document.body.requestPointerLock || document.body.mozRequestPointerLock;
+document.body.onclick = () => document.body.requestPointerLock();
+document.addEventListener('mousemove', (e) => {
+  if (document.pointerLockElement === document.body) {
+    yaw   -= e.movementX * 0.002; // left-right
+    pitch -= e.movementY * 0.002; // up-down
+    pitch = Math.max(-Math.PI/2, Math.min(Math.PI/2, pitch)); // clamp
+  }
+});
+
+
+/* ------------------------------------------------
+   7. ANIMATION LOOP + MOVEMENT
+   ------------------------------------------------
+   Syntax:
+     function animate() {
+       requestAnimationFrame(animate);
+       renderer.render(scene, camera);
+     }
+     animate();
+------------------------------------------------ */
+function animate() {
+  requestAnimationFrame(animate);
+
+  // WASD Movement
+  const speed = 0.1;
+  const forward = new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw));
+  const right   = new THREE.Vector3(Math.cos(yaw), 0, -Math.sin(yaw));
+
+  if (keys["KeyW"]) camera.position.addScaledVector(forward,  speed);
+  if (keys["KeyS"]) camera.position.addScaledVector(forward, -speed);
+  if (keys["KeyD"]) camera.position.addScaledVector(right,   -speed);
+  if (keys["KeyA"]) camera.position.addScaledVector(right,    speed);
+
+  // Camera look direction
+  camera.lookAt(
+    camera.position.x + Math.sin(yaw),
+    camera.position.y + Math.tan(pitch),
+    camera.position.z + Math.cos(yaw)
+  );
+
+  renderer.render(scene, camera);
+}
+animate();
+
+
+/* ------------------------------------------------
+   8. RESIZE HANDLER
+   ------------------------------------------------
+   Syntax:
+     window.addEventListener('resize', () => { ... });
+------------------------------------------------ */
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+</script>
+</body>
+</html>
