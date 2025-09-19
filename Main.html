@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Far Plain</title>
+  <style>
+    body { margin: 0; overflow: hidden; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+<!-- Three.js r103 core -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.103.0/build/three.min.js"></script>
+<!-- GLTFLoader from r103 examples -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.103.0/examples/js/loaders/GLTFLoader.js"></script>
+<video src="CW.mp4" style="display: none;" id="CWVideo" muted loop autoplay webkit-playsinline playsinline></video>
+<script>
+/* ------------------------------------------------
+   1. SCENE, CAMERA, RENDERER
+------------------------------------------------ */
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+const renderer = new THREE.WebGLRenderer();
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
+/* ------------------------------------------------
+   2. LIGHTING
+------------------------------------------------ */
+scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 0.6));
+const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+dirLight.position.set(5, 10, 5);
+scene.add(dirLight);
+
+/* ------------------------------------------------
+   3. LOAD GLTF MODEL
+------------------------------------------------ */
+const gltfLoader = new THREE.GLTFLoader();
+
+let TriangleStat;
+
+gltfLoader.load(
+  'OmniAngle.glb', 
+  function (gltf) {
+    TriangleStat = gltf.scene;
+    TriangleStat.scale.set(0.25, 0.25, 0.25);
+    TriangleStat.position.set(45, 3, 0);
+    scene.add(TriangleStat);
+}
+);
+
+gltfLoader.load(
+  'HeadText.glb', 
+  function (gltf) {
+    const Text = gltf.scene;
+    Text.scale.set(0.15, 0.15, 0.15);
+    Text.position.set(44.22, 1.75, 0);
+    Text.rotation.y = Math.PI * 45;
+    scene.add(Text);
+  },
+);
+
+gltfLoader.load(
+  'sculpture1.glb',
+  function (gltf) {
+    const Sculpture1 = gltf.scene;
+    Sculpture1.position.set(30, 0, 8);
+    Sculpture1.scale.set(1, 1, 1);
+    scene.add(Sculpture1);
+  }
+);
+
+gltfLoader.load(
+  'fountain1.glb',
+  function (gltf) {
+    const fountain = gltf.scene;
+    fountain.position.set(30, 0, -6.5);
+    fountain.scale.set(3, 3, 3);
+    fountain.rotation.y = Math.PI * 67.5;
+    scene.add(fountain);
+  }
+);
+
+gltfLoader.load(
+  'Desk.glb',
+  function (gltf) {
+    const Desk = gltf.scene;
+    Desk.position.set(10, 0, -8);
+    Desk.scale.set(1.5, 1.5, 1.5);
+    Desk.rotation.y = Math.PI * -22.5;
+    scene.add(Desk);
+  }
+);
+
+/* ------------------------------------------------
+   4. TEXTURES
+------------------------------------------------ */
+const texLoader = new THREE.TextureLoader();
+
+const brickTexture = texLoader.load('Brick.png');
+brickTexture.wrapS = brickTexture.wrapT = THREE.RepeatWrapping;
+brickTexture.repeat.set(25, 2.5);
+
+const brickTexture2 = texLoader.load('Brick.png');
+brickTexture2.wrapS = brickTexture2.wrapT = THREE.RepeatWrapping;
+brickTexture2.repeat.set(5, 2.5);
+
+const brickTexture3 = texLoader.load('Brick.png');
+brickTexture3.wrapS = brickTexture3.wrapT = THREE.RepeatWrapping;
+brickTexture3.repeat.set(2.5, 2.5);
+
+const bricktexturesquare = texLoader.load('Brick.png');
+bricktexturesquare.wrapS = bricktexturesquare.wrapT = THREE.RepeatWrapping;
+bricktexturesquare.repeat.set(1, 1);
+
+const painting1 = texLoader.load('p1.png');
+
+const Video1 = document.getElementById( 'CWVideo' );
+const CWTexture = new THREE.VideoTexture( Video1 );
+CWTexture.minFilter = THREE.LinearFilter;
+CWTexture.magFilter = THREE.LinearFilter;
+CWTexture.format = THREE.RGBFormat;
+Video1.play();
+
+/* ------------------------------------------------
+   5. OBJECTS
+------------------------------------------------ */
+// Ground
+const ground = new THREE.Mesh(
+  new THREE.PlaneGeometry(100, 20),
+  new THREE.MeshStandardMaterial({ color: 0x222222 })
+);
+ground.rotation.x = -Math.PI / 2;
+scene.add(ground);
+
+// Room
+const materials_b1 = [
+  new THREE.MeshBasicMaterial({ map: brickTexture2, side: THREE.DoubleSide }), // right
+  new THREE.MeshBasicMaterial({ map: brickTexture2, side: THREE.DoubleSide }), // left
+  new THREE.MeshBasicMaterial({ color: 0x333333, side: THREE.DoubleSide }),    // top
+  new THREE.MeshBasicMaterial({ color: 0x222222, transparent: true, opacity: 0, side: THREE.DoubleSide }), // bottom
+  new THREE.MeshBasicMaterial({ map: brickTexture, side: THREE.DoubleSide }),  // front
+  new THREE.MeshBasicMaterial({ map: brickTexture, side: THREE.DoubleSide })   // back
+];
+const Room1 = new THREE.Mesh(new THREE.BoxGeometry(100, 10, 20), materials_b1);
+Room1.position.set(0, 5, 0);
+scene.add(Room1);
+
+// Painting
+const picture1 = new THREE.Mesh(
+  new THREE.PlaneGeometry(5, 5),
+  new THREE.MeshBasicMaterial({ map: painting1 })
+);
+picture1.position.set(0, 5, -7.4);
+scene.add(picture1);
+
+// Stand
+const picture1stand = new THREE.Mesh(
+  new THREE.BoxGeometry(5, 10, 5),
+  new THREE.MeshBasicMaterial({ map: brickTexture3 })
+);
+picture1stand.position.set(0, 5, -10);
+scene.add(picture1stand);
+
+const materials_ped = [
+  new THREE.MeshBasicMaterial({ color: 0x777777 }),
+  new THREE.MeshBasicMaterial({ color: 0x777777 }),
+  new THREE.MeshBasicMaterial({ color: 0x333333 }),
+  new THREE.MeshBasicMaterial({ color: 0x777777 }),
+  new THREE.MeshBasicMaterial({ color: 0x777777 }),
+  new THREE.MeshBasicMaterial({ color: 0x777777 })
+];
+
+
+const peadestal = new THREE.Mesh(
+  new THREE.BoxGeometry(1.5, 3, 1.5),
+  materials_ped
+);
+peadestal.position.set(45, 1, 0);
+scene.add(peadestal);
+
+const water_1 = new THREE.Mesh(
+  new THREE.PlaneGeometry(8, 1.5),
+  new THREE.MeshBasicMaterial({ map: CWTexture, side: THREE.DoubleSide })
+);
+water_1.position.set(30, 4, -9);
+water_1.rotation.z = Math.PI * 22.5;
+scene.add(water_1);
+
+/* ------------------------------------------------
+   6. CAMERA
+------------------------------------------------ */
+camera.position.set(0, 4, 0);
+
+/* ------------------------------------------------
+   7. INPUT HANDLING
+------------------------------------------------ */
+const keys = {};
+document.addEventListener('keydown', (e) => keys[e.code] = true);
+document.addEventListener('keyup',   (e) => keys[e.code] = false);
+
+// Mouse look
+let yaw = 0, pitch = 0;
+document.body.requestPointerLock = document.body.requestPointerLock || document.body.mozRequestPointerLock;
+document.body.onclick = () => document.body.requestPointerLock();
+document.addEventListener('mousemove', (e) => {
+  if (document.pointerLockElement === document.body) {
+    yaw   -= e.movementX * 0.002;
+    pitch -= e.movementY * 0.002;
+    pitch = Math.max(-Math.PI/2, Math.min(Math.PI/2, pitch));
+  }
+});
+
+/* ------------------------------------------------
+   8. ANIMATION LOOP
+------------------------------------------------ */
+function animate() {
+  requestAnimationFrame(animate);
+
+  if (TriangleStat) {
+        TriangleStat.position.y = Math.sin(Date.now() * 0.001) * 0.3 + 3; // simple bob
+    }
+
+  const speed = 0.1;
+  const forward = new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw));
+  const right   = new THREE.Vector3(Math.cos(yaw), 0, -Math.sin(yaw));
+
+  if (keys["KeyW"]) camera.position.addScaledVector(forward,  speed);
+  if (keys["KeyS"]) camera.position.addScaledVector(forward, -speed);
+  if (keys["KeyD"]) camera.position.addScaledVector(right,   -speed);
+  if (keys["KeyA"]) camera.position.addScaledVector(right,    speed);
+
+
+  camera.lookAt(
+    camera.position.x + Math.sin(yaw),
+    camera.position.y + Math.tan(pitch),
+    camera.position.z + Math.cos(yaw)
+  );
+
+
+
+  renderer.render(scene, camera);
+}
+animate();
+
+/* ------------------------------------------------
+   9. RESIZE HANDLER
+------------------------------------------------ */
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+</script>
+</body>
+</html>
